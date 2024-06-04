@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, FormEvent, ChangeEvent } from "react"
 import { auth, db } from "../firebase/config"
 import "firebase/firestore"
 import {
@@ -11,18 +11,44 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import Image from "next/image"
 
-const Chat = () => {
+interface Message {
+  id: string
+  createdAt: Timestamp
+  text: string
+  user: string
+  uid: string
+  username: string
+}
+
+interface User {
+  uid: string
+  email: string | null
+}
+
+interface UserData {
+  username: string
+}
+
+interface GroupedMessage {
+  user: string
+  username: string
+  messages: Message[]
+}
+
+const Chat: React.FC = () => {
   const [user] = useAuthState(auth)
-  const [newMessage, setNewMessage] = useState("")
-  const [messages, setMessages] = useState([])
-  const [userData, setUserData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [newMessage, setNewMessage] = useState<string>("")
+  const [messages, setMessages] = useState<GroupedMessage[]>([])
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
   const messagesRef = collection(db, "messages")
 
@@ -30,10 +56,10 @@ const Chat = () => {
     const fetchDocument = async () => {
       try {
         if (user) {
-          const userDocRef = doc(db, "users", user.uid) // Specify user's UID
+          const userDocRef = doc(db, "users", user.uid)
           const docSnapshot = await getDoc(userDocRef)
           if (docSnapshot.exists()) {
-            const userData = docSnapshot.data()
+            const userData = docSnapshot.data() as UserData
             console.log("Document data:", userData)
             setUserData(userData)
           } else {
@@ -47,18 +73,18 @@ const Chat = () => {
       }
     }
     fetchDocument()
-  }, [user]) // Ensure useEffect runs when user changes
+  }, [user])
 
   useEffect(() => {
     const queryMessages = query(messagesRef, orderBy("createdAt"), limit(25))
-    onSnapshot(queryMessages, (snapshot) => {
-      let messages = []
+    const unsubscribe = onSnapshot(queryMessages, (snapshot) => {
+      let messages: Message[] = []
       snapshot.forEach((doc) => {
-        messages.push({ ...doc.data(), id: doc.id })
+        messages.push({ ...(doc.data() as Message), id: doc.id })
       })
 
-      const groupedMessages = []
-      let currentGroup = null
+      const groupedMessages: GroupedMessage[] = []
+      let currentGroup: GroupedMessage | null = null
 
       messages.forEach((message) => {
         if (currentGroup && currentGroup.user === message.user) {
@@ -81,11 +107,13 @@ const Chat = () => {
 
       setMessages(groupedMessages)
     })
-  }, [])
 
-  const handleSubmit = async (e) => {
+    return () => unsubscribe()
+  }, [messagesRef])
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (newMessage === "" || !userData) return
+    if (newMessage === "" || !userData || !user) return
 
     await addDoc(messagesRef, {
       createdAt: serverTimestamp(),
@@ -98,7 +126,7 @@ const Chat = () => {
     setNewMessage("")
   }
 
-  const formatTime = (timestamp) => {
+  const formatTime = (timestamp: Timestamp) => {
     const date = timestamp?.toDate()
     return date
       ? `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
@@ -114,7 +142,7 @@ const Chat = () => {
 
   return (
     <>
-      <div className="fixed  h-full w-auto right-0  border-gray-900/10 border-l-2 hidden lg:block md:block">
+      <div className="fixed h-full w-auto right-0 border-black/30 border-l-4 hidden lg:block md:block">
         <div className="border-b h-[6%] flex justify-center items-center bg-black w-full text-white">
           Chat Box
         </div>
@@ -124,12 +152,18 @@ const Chat = () => {
               <ScrollArea className=" h-[600px] mb-6">
                 {messages.map((group, index) => (
                   <div
-                    className="text-white  flex border-b-2 pb-6 mb-4"
+                    className="text-white flex border-b-2 pb-6 mb-4"
                     key={index}
                   >
-                    <img src="user.png" className="h-6 mr-4"></img>
                     <div className="flex flex-col flex-grow">
-                      <div className="flex justify-between">
+                      <div className="flex justify-around">
+                        <Image
+                          src="/user.png"
+                          alt="user"
+                          width={30}
+                          height={20}
+                          className="mr-2"
+                        />
                         <h1 className="font-bold text-l text-blue-300">
                           {group.username}
                         </h1>
@@ -137,7 +171,7 @@ const Chat = () => {
                           {formatTime(group.messages[0].createdAt)}
                         </h1>
                       </div>
-                      {(group.messages || []).map((message, msgIndex) => (
+                      {group.messages.map((message, msgIndex) => (
                         <div key={msgIndex} className="mt-1 text-sm">
                           <h1>{message.text}</h1>
                         </div>
@@ -155,7 +189,9 @@ const Chat = () => {
                 placeholder="Type your message here."
                 id="messageInput"
                 disabled={!userData}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                  setNewMessage(e.target.value)
+                }
               />
               <Button>Send message</Button>
             </div>
