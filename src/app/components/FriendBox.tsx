@@ -3,12 +3,33 @@ import React, { useEffect, useState } from "react"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { auth, db } from "../firebase/config"
 import { collection, getDoc, doc, getDocs } from "firebase/firestore"
+import Image from "next/image"
 
-function Page({ onFriendBoxButtonClick }) {
-  const [user] = useAuthState(auth)
-  const [users, setUsers] = useState(null)
-  const [userData, setUserData] = useState(null)
-  const [userFriends, setUserFriends] = useState([])
+interface User {
+  uid: string
+  email: string | null
+}
+
+interface UserData {
+  username: string
+  friends?: Record<string, boolean>
+  address?: string
+}
+
+interface Friend {
+  id: string
+  data: UserData
+}
+
+interface PageProps {
+  onFriendBoxButtonClick: (address?: string, username?: string) => void
+}
+
+const Page: React.FC<PageProps> = ({ onFriendBoxButtonClick }) => {
+  const [user] = useAuthState(auth) as [User | null, boolean, Error | undefined]
+  const [users, setUsers] = useState<Friend[] | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [userFriends, setUserFriends] = useState<Friend[]>([])
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -17,7 +38,7 @@ function Page({ onFriendBoxButtonClick }) {
           const userDocRef = doc(db, "users", user.uid)
           const docSnapshot = await getDoc(userDocRef)
           if (docSnapshot.exists()) {
-            const userData = docSnapshot.data()
+            const userData = docSnapshot.data() as UserData
             setUserData(userData)
           } else {
             console.log("No such document!")
@@ -35,9 +56,9 @@ function Page({ onFriendBoxButtonClick }) {
       try {
         const usersRef = collection(db, "users")
         const querySnapshot = await getDocs(usersRef)
-        const fetchedUsers = []
+        const fetchedUsers: Friend[] = []
         querySnapshot.forEach((doc) => {
-          fetchedUsers.push({ id: doc.id, data: doc.data() })
+          fetchedUsers.push({ id: doc.id, data: doc.data() as UserData })
         })
         setUsers(fetchedUsers)
       } catch (error) {
@@ -57,7 +78,7 @@ function Page({ onFriendBoxButtonClick }) {
         const friend = users.find((user) => user.id === friendId)
         return friend ? { id: friend.id, data: friend.data } : null
       })
-      setUserFriends(friendsData.filter(Boolean))
+      setUserFriends(friendsData.filter(Boolean) as Friend[])
       console.log("Friends data:", friendsData)
     }
   }, [userData, users])
@@ -66,7 +87,7 @@ function Page({ onFriendBoxButtonClick }) {
     <div className="flex justify-center w-64">
       <div className="">
         <div className="flex mb-1 text-center justify-center justify-items-center">
-          <img src="friend.png" alt="friends" className="w-8 h-7" />
+          <Image src="/friend.png" alt="friends" width={32} height={32} />
           <h1 className="text-center font-bold text-white">Friends</h1>
         </div>
         <div className="flex">
@@ -87,7 +108,7 @@ function Page({ onFriendBoxButtonClick }) {
               </div>
             ))
           ) : (
-            <p className="text-black text-center">Add some friends first!</p>
+            <p className="text-white text-center">Add some friends first!</p>
           )}
         </div>
       </div>
