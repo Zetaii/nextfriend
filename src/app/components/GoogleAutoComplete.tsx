@@ -177,6 +177,7 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
         const formattedAddress = place.formatted_address
         if (formattedAddress) {
           setDestination(formattedAddress)
+          setShowSuggestions(false) // Hide suggestions when a place is selected
           if (onDestinationSelected) {
             calculateTravelTime([formattedAddress], (travelTimes) => {
               const travelInfo = travelTimes[formattedAddress] || {
@@ -238,6 +239,7 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     setText(item) // Set input text to the clicked suggestion
     setCoincidences([]) // Clear all suggestions
     setSuggestions([]) // Clear suggestions after selecting one
+    setShowSuggestions(false) // Hide suggestions when a suggestion is clicked
     event.stopPropagation() // Prevent event propagation to avoid closing the suggestion box
 
     // Check if suggestions is not empty or null before calling calculateTravelTime
@@ -262,15 +264,14 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
       if (
         suggestionsListRef.current &&
         !suggestionsListRef.current.contains(event.target as Node) &&
-        !destinationInputRef.current?.contains(event.target as Node) &&
-        !(destinationInputRef.current?.matches(":focus") as boolean) &&
-        !text.trim() && // Check if the destination has been set
-        suggestions.length === 0 // Check if there are no suggestions
+        !destinationInputRef.current?.contains(event.target as Node)
       ) {
         setShowSuggestions(false) // Hide suggestions when clicking outside
+        setCoincidences([]) // Clear all suggestions
+        setSuggestions([])
       }
     },
-    [suggestions, text, destinationInputRef, suggestionsListRef]
+    [destinationInputRef]
   )
 
   const handleInputFocus = () => {
@@ -293,24 +294,17 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     }
   }, [handleClickOutside])
 
-  useEffect(() => {
-    // Add event listener when component mounts
-    document.addEventListener("click", handleClickOutside)
-    // Remove event listener when component unmounts
-    return () => {
-      document.removeEventListener("click", handleClickOutside)
-    }
-  }, [handleClickOutside])
-
   return (
     <div>
       <div className="w-full pr-6 ml-1 text-center relative flex mb-2">
-        <Image
-          src="/bluelocation.png"
-          alt="location icon"
-          width={24}
-          height={24}
-        />
+        <div>
+          <Image
+            src="/bluelocation.png"
+            alt="location icon"
+            width={24}
+            height={24}
+          />
+        </div>
         <label className="pr-2 font-bold text-white" htmlFor="destinationInput">
           Destination
         </label>

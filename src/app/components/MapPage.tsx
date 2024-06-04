@@ -276,13 +276,15 @@ export const MapPage: React.FC = (): any => {
                   Travel Info
                 </h1>
 
-                <div className="mx-1 w-full text-center flex mb-2 mr-20">
-                  <Image
-                    src="/home.png"
-                    alt="home icon"
-                    width={32}
-                    height={32}
-                  />
+                <div className="mx-1 w-full text-center flex mb-2 mr-20 justify-center">
+                  <div className="justify-center">
+                    <Image
+                      src="/home.png"
+                      alt="home icon"
+                      width={32}
+                      height={32}
+                    />
+                  </div>
                   <label
                     className="pr-6 ml-1 text-center text-white font-bold"
                     htmlFor="originInput"
@@ -300,17 +302,21 @@ export const MapPage: React.FC = (): any => {
                     id="originInput"
                   />
                 </div>
-                <GoogleAutoComplete
-                  destinationInputRef={destinationInputRef}
-                  setDestination={(destination) => setDestination(destination)}
-                  onDestinationSelected={(destination) => {
-                    handleCalculateTravelTime(destination, setTravelTime)
-                  }}
-                  userOrigin={
-                    userData && userData.address ? userData.address : ""
-                  }
-                />
-                <div className="">
+                <div className="justify-center flex ">
+                  <GoogleAutoComplete
+                    destinationInputRef={destinationInputRef}
+                    setDestination={(destination) =>
+                      setDestination(destination)
+                    }
+                    onDestinationSelected={(destination) => {
+                      handleCalculateTravelTime(destination, setTravelTime)
+                    }}
+                    userOrigin={
+                      userData && userData.address ? userData.address : ""
+                    }
+                  />
+                </div>
+                <div className="justify-center flex">
                   <div className="flex ml-1 text-center">
                     <Image
                       src="/clock.png"
@@ -322,6 +328,7 @@ export const MapPage: React.FC = (): any => {
                       Travel Time
                     </p>
                     <div className="">
+                      <input></input>
                       {travelTime && (
                         <div className="text-black bg-white text-center w-56  border-2 ml-1 border-slate-400 rounded py-1">
                           {travelTime} minutes
