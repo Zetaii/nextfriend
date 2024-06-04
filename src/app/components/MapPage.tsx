@@ -12,6 +12,7 @@ import {
   DirectionsService,
 } from "@react-google-maps/api"
 import MaxWidthWrapper from "../components/MaxWidthWrapper"
+import Image from "next/image"
 
 interface UserData {
   address: string
@@ -181,8 +182,70 @@ export const MapPage: React.FC = (): any => {
     return <div>Loading maps</div>
   }
 
-  const handleFriendBoxButtonClick = () => {}
+  const handleFriendBoxButtonClick = (
+    friendAddress: any,
+    friendUsername: any
+  ) => {
+    if (!destination || !friendAddress) {
+      console.error("Destination or friend address not available")
+      return
+    }
 
+    calculateFriendRoute(
+      destination,
+      friendAddress,
+      friendUsername,
+      origin,
+      destination
+    )
+  }
+
+  const calculateFriendRoute = (
+    origin: string,
+    destination: string,
+    friendId: string,
+    friendUsername: string,
+    friendAddress: string
+  ) => {
+    const directionsService = new window.google.maps.DirectionsService()
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (response, status) => {
+        if (
+          status === "OK" &&
+          response &&
+          response.routes &&
+          response.routes[0] &&
+          response.routes[0].legs &&
+          response.routes[0].legs[0] &&
+          response.routes[0].legs[0].duration
+        ) {
+          const route = response.routes[0]
+          if (route && route.legs && route.legs[0] && route.legs[0].duration) {
+            const travelTimeInSeconds = route.legs[0].duration.value
+            const travelTimeInMinutes = Math.ceil(travelTimeInSeconds / 60)
+            setFriendTravelTimes((prev) => ({
+              ...prev,
+              [friendId]: {
+                username: friendUsername,
+                travelTime: travelTimeInMinutes,
+                address: friendAddress,
+              },
+            }))
+          } else {
+            console.error(
+              `Directions request for ${friendUsername} failed due to`,
+              status
+            )
+          }
+        }
+      }
+    )
+  }
   return (
     <>
       <DirectionsService
@@ -208,13 +271,18 @@ export const MapPage: React.FC = (): any => {
           </div>
           <div className="flex justify-center ">
             <div className="w-[100%] mt-14">
-              <div className="w-full bg-zinc-400 rounded-xl pb-12 px-6 h-[40%] ">
-                <h1 className="text-center mb-10 text-black text-xl font-bold">
+              <div className="w-full bg-zinc-950 rounded-xl pb-12 px-6 h-[40%] border-2 border-white">
+                <h1 className="text-center mb-10 text-white pt-4   text-xl font-bold">
                   Travel Info
                 </h1>
 
                 <div className="mx-1 w-full text-center flex mb-2 mr-20">
-                  <img src="home.png" className="w-6 h-6" alt="home icon" />
+                  <Image
+                    src="/home.png"
+                    alt="home icon"
+                    width={32}
+                    height={32}
+                  />
                   <label
                     className="pr-6 ml-1 text-center text-white font-bold"
                     htmlFor="originInput"
@@ -244,10 +312,11 @@ export const MapPage: React.FC = (): any => {
                 />
                 <div className="">
                   <div className="flex ml-1 text-center">
-                    <img
-                      src="clock.png"
-                      className="w-6  h-6"
+                    <Image
+                      src="/clock.png"
                       alt="clock icon"
+                      width={32}
+                      height={32}
                     />
                     <p className=" ml-1  text-center font-bold text-white">
                       Travel Time
@@ -262,7 +331,7 @@ export const MapPage: React.FC = (): any => {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-center mt-[40%] bg-zinc-400 py-12  rounded-xl">
+              <div className="flex flex-col items-center mt-[40%] bg-zinc-950 border-white border-2 py-12  rounded-xl">
                 <FriendBox
                   onFriendBoxButtonClick={handleFriendBoxButtonClick}
                 />

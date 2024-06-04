@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from "react"
+import Image from "next/image"
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  MutableRefObject,
+  useCallback,
+} from "react"
 
 interface Suggestion {
   establishment: string
@@ -10,7 +17,7 @@ interface Suggestion {
 interface GoogleAutoCompleteProps {
   destinationInputRef: MutableRefObject<HTMLInputElement | null>
   setDestination: (destination: string) => void
-  onDestinationSelected?: (destination: string, travelTime: string) => void // Adjusted type
+  onDestinationSelected?: (destination: string, travelInfo: string) => void
   userOrigin: string
 }
 
@@ -26,11 +33,13 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false)
   const suggestionsListRef = useRef<HTMLUListElement>(null)
-  const [travelTimes, setTravelTimes] = useState<{ [key: string]: string }>({})
+  const [travelTimes, setTravelTimes] = useState<{
+    [key: string]: { time: string; distance: string }
+  }>({})
 
   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-  const getMatches = async (): Promise<any> => {
+  const getMatches = useCallback(async (): Promise<any> => {
     return new Promise((resolve, reject) => {
       if (!text) {
         return reject(new Error("Need valid text input"))
@@ -52,9 +61,9 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
         reject(e)
       }
     })
-  }
+  }, [text])
 
-  const doQuery = async () => {
+  const doQuery = useCallback(async () => {
     try {
       const results = JSON.parse(JSON.stringify(await getMatches()))
       const parsedResults = results.map((result: any) => {
@@ -75,13 +84,13 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     } catch (error) {
       console.error("Error fetching suggestions:", error)
     }
-  }
+  }, [getMatches])
 
   useEffect(() => {
     if (text) {
       doQuery()
     }
-  }, [text])
+  }, [text, doQuery])
 
   useEffect(() => {
     const script = document.createElement("script")
@@ -98,7 +107,60 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     return () => {
       document.head.removeChild(script)
     }
-  }, [])
+  }, [API_KEY])
+
+  const calculateTravelTime = useCallback(
+    (
+      destinations: string[],
+      callback?: (times: {
+        [key: string]: { time: string; distance: string }
+      }) => void
+    ) => {
+      const service = new window.google.maps.DistanceMatrixService()
+      service.getDistanceMatrix(
+        {
+          origins: [userOrigin],
+          destinations,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          unitSystem: window.google.maps.UnitSystem.IMPERIAL,
+        },
+        (response, status) => {
+          if (
+            status === "OK" &&
+            response &&
+            response.rows &&
+            response.rows[0] &&
+            response.rows[0].elements
+          ) {
+            const times: { [key: string]: { time: string; distance: string } } =
+              {}
+            response.rows[0].elements.forEach((element, index) => {
+              const destination = destinations[index]
+              if (element.status === "OK") {
+                const duration = element.duration.value // Duration in seconds
+                const distance = element.distance.text // Distance as a formatted string
+                const hours = Math.floor(duration / 3600)
+                const minutes = Math.round((duration % 3600) / 60)
+                times[destination] = {
+                  time: `${hours}H ${minutes}M`,
+                  distance,
+                }
+              } else {
+                times[destination] = { time: "N/A", distance: "N/A" }
+              }
+            })
+            setTravelTimes(times)
+            if (callback) {
+              callback(times)
+            }
+          } else {
+            console.error("Error calculating travel times:", status)
+          }
+        }
+      )
+    },
+    [userOrigin]
+  )
 
   useEffect(() => {
     if (scriptLoaded && destinationInputRef.current) {
@@ -117,9 +179,13 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
           setDestination(formattedAddress)
           if (onDestinationSelected) {
             calculateTravelTime([formattedAddress], (travelTimes) => {
+              const travelInfo = travelTimes[formattedAddress] || {
+                time: "N/A",
+                distance: "N/A",
+              }
               onDestinationSelected(
                 formattedAddress,
-                travelTimes[formattedAddress] || "N/A"
+                `${travelInfo.time} (${travelInfo.distance})`
               )
             })
           } else {
@@ -144,7 +210,13 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
         document.head.removeChild(style)
       }
     }
-  }, [scriptLoaded, destinationInputRef, setDestination, onDestinationSelected])
+  }, [
+    scriptLoaded,
+    destinationInputRef,
+    setDestination,
+    onDestinationSelected,
+    calculateTravelTime,
+  ])
 
   useEffect(() => {
     if (
@@ -155,50 +227,7 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     ) {
       calculateTravelTime(suggestions.map((s) => s.description))
     }
-  }, [scriptLoaded, userOrigin, suggestions])
-
-  const calculateTravelTime = (
-    destinations: string[],
-    callback?: (times: { [key: string]: string }) => void
-  ) => {
-    const service = new window.google.maps.DistanceMatrixService()
-    service.getDistanceMatrix(
-      {
-        origins: [userOrigin],
-        destinations,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-      },
-      (response, status) => {
-        if (
-          status === "OK" &&
-          response &&
-          response.rows &&
-          response.rows[0] &&
-          response.rows[0].elements
-        ) {
-          const times: { [key: string]: string } = {}
-          response.rows[0].elements.forEach((element, index) => {
-            const destination = destinations[index]
-            if (element.status === "OK") {
-              const duration = element.duration.value // Duration in seconds
-              const hours = Math.floor(duration / 3600)
-              const minutes = Math.round((duration % 3600) / 60)
-              times[destination] = `${hours}H ${minutes}M`
-            } else {
-              times[destination] = "N/A"
-            }
-          })
-          setTravelTimes(times)
-          if (callback) {
-            callback(times)
-          }
-        } else {
-          console.error("Error calculating travel times:", status)
-        }
-      }
-    )
-  }
+  }, [scriptLoaded, userOrigin, suggestions, calculateTravelTime])
 
   const handleSuggestionClick = (
     item: string,
@@ -215,24 +244,34 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     if (suggestions && suggestions.length > 0) {
       calculateTravelTime([item], (travelTimes) => {
         if (onDestinationSelected) {
-          onDestinationSelected(item, travelTimes[item] || "N/A")
+          const travelInfo = travelTimes[item] || {
+            time: "N/A",
+            distance: "N/A",
+          }
+          onDestinationSelected(
+            item,
+            `${travelInfo.time} (${travelInfo.distance})`
+          )
         }
       })
     }
   }
 
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      suggestionsListRef.current &&
-      !suggestionsListRef.current.contains(event.target as Node) &&
-      !destinationInputRef.current?.contains(event.target as Node) &&
-      !(destinationInputRef.current?.matches(":focus") as boolean) &&
-      !text.trim() && // Check if the destination has been set
-      suggestions.length === 0 // Check if there are no suggestions
-    ) {
-      setShowSuggestions(false) // Hide suggestions when clicking outside
-    }
-  }
+  const handleClickOutside = useCallback(
+    (event: MouseEvent) => {
+      if (
+        suggestionsListRef.current &&
+        !suggestionsListRef.current.contains(event.target as Node) &&
+        !destinationInputRef.current?.contains(event.target as Node) &&
+        !(destinationInputRef.current?.matches(":focus") as boolean) &&
+        !text.trim() && // Check if the destination has been set
+        suggestions.length === 0 // Check if there are no suggestions
+      ) {
+        setShowSuggestions(false) // Hide suggestions when clicking outside
+      }
+    },
+    [suggestions, text, destinationInputRef, suggestionsListRef]
+  )
 
   const handleInputFocus = () => {
     if (text) {
@@ -252,7 +291,7 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [])
+  }, [handleClickOutside])
 
   useEffect(() => {
     // Add event listener when component mounts
@@ -261,12 +300,17 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
     return () => {
       document.removeEventListener("click", handleClickOutside)
     }
-  }, [])
+  }, [handleClickOutside])
 
   return (
     <div>
       <div className="w-full pr-6 ml-1 text-center relative flex mb-2">
-        <img src="bluelocation.png" className="w-6 h-6" alt="location icon" />
+        <Image
+          src="/bluelocation.png"
+          alt="location icon"
+          width={24}
+          height={24}
+        />
         <label className="pr-2 font-bold text-white" htmlFor="destinationInput">
           Destination
         </label>
@@ -307,7 +351,8 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
                       {travelTimes[item.description] && (
                         <div className="ml-3 font-bold bg-blue-50 rounded-md mb-1">
                           <div className="w-full px-1">
-                            {travelTimes[item.description]}
+                            {travelTimes[item.description].time} (
+                            {travelTimes[item.description].distance})
                           </div>
                         </div>
                       )}

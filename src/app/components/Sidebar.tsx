@@ -2,6 +2,7 @@
 import React, { useState } from "react"
 import FriendProfile from "./FriendProfile"
 import { ArrowLeft, ArrowRight } from "lucide-react"
+import Image from "next/image"
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -26,7 +27,12 @@ const Sidebar = () => {
         {!isCollapsed && (
           <div>
             <div className="flex items-center">
-              <img src="friendprofile.png" className="w-6 h-6 -mr-2" />
+              <Image
+                src="/friendprofile.png"
+                alt="friend"
+                width={6}
+                height={6}
+              />
               <div className="w-full text-center mb-6">Friend Profiles:</div>
             </div>
             <div className="mb-6 w-full">
@@ -35,19 +41,39 @@ const Sidebar = () => {
             <div className="w-full text-center mb-6">Suggested Friends:</div>
             <div className="flex flex-col items-center">
               <div className="flex justify-center items-center w-full mb-6">
-                <img src="friendprofile.png" className="w-6 h-6 -mr-2" />
+                <Image
+                  src="/friendprofile.png"
+                  alt="friend"
+                  width={6}
+                  height={6}
+                />
                 <div className="w-full text-center">Friend 1</div>
               </div>
               <div className="flex justify-center items-center w-full mb-6">
-                <img src="friendprofile.png" className="w-6 h-6 -mr-2" />
+                <Image
+                  src="/friendprofile.png"
+                  alt="friend"
+                  width={6}
+                  height={6}
+                />
                 <div className="w-full text-center">Friend 2</div>
               </div>
               <div className="flex justify-center items-center w-full mb-6">
-                <img src="friendprofile.png" className="w-6 h-6 -mr-2" />
+                <Image
+                  src="/friendprofile.png"
+                  alt="friend"
+                  width={6}
+                  height={6}
+                />
                 <div className="w-full text-center">Friend 3</div>
               </div>
               <div className="flex justify-center items-center w-full mb-6">
-                <img src="friendprofile.png" className="w-6 h-6 -mr-2" />
+                <Image
+                  src="/friendprofile.png"
+                  alt="friend"
+                  width={6}
+                  height={6}
+                />
                 <div className="w-full text-center">Friend 4</div>
               </div>
             </div>

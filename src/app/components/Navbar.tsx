@@ -3,6 +3,7 @@ import React from "react"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { auth } from "../firebase/config"
 import FriendSearch from "./FriendSearch"
+import Image from "next/image"
 
 const Navbar = () => {
   const [user] = useAuthState(auth)
@@ -18,20 +19,43 @@ const Navbar = () => {
           <div className="font-bold text-2xl">
             <a>FriendMap</a>
           </div>
-          <div className="flex">
-            <img src="home1.png" className="w-6 h-6 mr-1 mt-2"></img>
+          <div className="flex items-center">
+            <div>
+              <Image
+                src="/home1.png"
+                alt="map"
+                width={32}
+                height={24}
+                className=""
+              />
+            </div>
             <a href="/" className="text-xl font-extrabold p-2 hover:text-black">
               Home
             </a>
           </div>
-          <div className="flex">
-            <img src="map.png" className="w-6 h-6 mr-1"></img>
+          <div className="flex items-center">
+            <Image
+              src="/map.png"
+              alt="map"
+              width={32}
+              height={14}
+              className="mr-1"
+            />
+
             <a href="/map" className="text-xl font-extrabold hover:text-black">
               Map
             </a>
           </div>
-          <div className="flex ">
-            <img src="user.png" className="w-6 h-6 mr-1"></img>
+          <div className="flex justify-center items-center">
+            <div>
+              <Image
+                src="/user.png"
+                alt="map"
+                width={32}
+                height={24}
+                className="mr-2"
+              />
+            </div>
             <a
               href="/profile"
               className="text-xl font-extrabold hover:text-black"

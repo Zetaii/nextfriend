@@ -11,22 +11,28 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarTrigger,
-} from "@/components/ui/menubar"
-import { ArrowDown } from "lucide-react"
+interface User {
+  uid: string
+  email: string | null
+}
 
-const friendprofile = () => {
-  const [user] = useAuthState(auth)
-  const [users, setUsers] = useState(null)
-  const [userData, setUserData] = useState(null)
-  const [userFriends, setUserFriends] = useState([])
+interface UserData {
+  username: string
+  friends?: Record<string, boolean>
+  address?: string
+  email?: string
+}
+
+interface Friend {
+  id: string
+  data: UserData
+}
+
+const FriendProfile: React.FC = () => {
+  const [user] = useAuthState(auth) as [User | null, boolean, Error | undefined]
+  const [users, setUsers] = useState<Friend[] | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [userFriends, setUserFriends] = useState<Friend[]>([])
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -35,7 +41,7 @@ const friendprofile = () => {
           const userDocRef = doc(db, "users", user.uid)
           const docSnapshot = await getDoc(userDocRef)
           if (docSnapshot.exists()) {
-            const userData = docSnapshot.data()
+            const userData = docSnapshot.data() as UserData
             setUserData(userData)
           } else {
             console.log("No such document!")
@@ -53,9 +59,9 @@ const friendprofile = () => {
       try {
         const usersRef = collection(db, "users")
         const querySnapshot = await getDocs(usersRef)
-        const fetchedUsers = []
+        const fetchedUsers: Friend[] = []
         querySnapshot.forEach((doc) => {
-          fetchedUsers.push({ id: doc.id, data: doc.data() })
+          fetchedUsers.push({ id: doc.id, data: doc.data() as UserData })
         })
         setUsers(fetchedUsers)
       } catch (error) {
@@ -75,7 +81,7 @@ const friendprofile = () => {
         const friend = users.find((user) => user.id === friendId)
         return friend ? { id: friend.id, data: friend.data } : null
       })
-      setUserFriends(friendsData.filter(Boolean))
+      setUserFriends(friendsData.filter(Boolean) as Friend[])
       console.log("Friends data:", friendsData)
     }
   }, [userData, users])
@@ -84,22 +90,21 @@ const friendprofile = () => {
     <div>
       {userFriends.length > 0 ? (
         userFriends.map((friend) => (
-          <div key={friend.id} className="  w-full no-underline">
+          <div key={friend.id} className="w-full no-underline">
             <Accordion
-              type=""
+              type="single"
               collapsible
               className="w-full text-center no-underline"
             >
-              <AccordionItem value="item-1" className=" border-0">
+              <AccordionItem value="item-1" className="border-0">
                 <AccordionTrigger className="font-bold text-center justify-center">
-                  {" "}
                   {friend.data.username}
                 </AccordionTrigger>
                 <AccordionContent className="border-0">
-                  <AccordionItem className="border-0 mb-4 ">
+                  <AccordionItem className="border-0 mb-4" value="f">
                     {friend.data.address}
                   </AccordionItem>
-                  <AccordionItem className=" border-0 w-full">
+                  <AccordionItem className="border-0 w-full" value="f">
                     {friend.data.email}
                   </AccordionItem>
                 </AccordionContent>
@@ -114,4 +119,4 @@ const friendprofile = () => {
   )
 }
 
-export default friendprofile
+export default FriendProfile

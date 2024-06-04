@@ -2,20 +2,33 @@
 import React, { useState, useEffect, useRef } from "react"
 import { collection, getDocs, getDoc, doc, updateDoc } from "firebase/firestore"
 import { db } from "../firebase/config"
+import Image from "next/image"
 
-const FriendSearch = ({ currentUserUid }) => {
-  // Pass current user's UID as a prop
-  const [searchQuery, setSearchQuery] = useState("")
-  const [users, setUsers] = useState([])
-  const [filteredUsers, setFilteredUsers] = useState([])
-  const [showUserList, setShowUserList] = useState(false)
-  const [isInsideUserList, setIsInsideUserList] = useState(false)
-  const userListRef = useRef(null)
-  const inputRef = useRef(null)
+interface User {
+  uid: string
+  username: string
+  [key: string]: any
+}
+
+interface FriendSearchProps {
+  currentUserUid: string
+}
+
+const FriendSearch: React.FC<FriendSearchProps> = ({ currentUserUid }) => {
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [users, setUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
+  const [showUserList, setShowUserList] = useState<boolean>(false)
+  const [isInsideUserList, setIsInsideUserList] = useState<boolean>(false)
+  const userListRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    const handleMouseDown = (event) => {
-      if (userListRef.current && !userListRef.current.contains(event.target)) {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (
+        userListRef.current &&
+        !userListRef.current.contains(event.target as Node)
+      ) {
         setShowUserList(false)
       }
     }
@@ -32,16 +45,13 @@ const FriendSearch = ({ currentUserUid }) => {
       try {
         const usersRef = collection(db, "users")
         const querySnapshot = await getDocs(usersRef)
-        const fetchedUsers = []
+        const fetchedUsers: User[] = []
 
         querySnapshot.forEach((doc) => {
-          const userData = doc.data() // Retrieve user data from Firestore document
+          const userData = doc.data() as User // Retrieve user data from Firestore document
           if (doc.id !== currentUserUid) {
-            // Exclude current user from friend list
             fetchedUsers.push({
-              uid: doc.id, // Use doc.id to get the user's UID
-              username: userData.username, // Access the username from userData
-              ...userData, // Include other user data
+              ...userData,
             })
           }
         })
@@ -54,11 +64,16 @@ const FriendSearch = ({ currentUserUid }) => {
     }
 
     fetchUsers()
-  }, [])
+  }, [currentUserUid])
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
     setShowUserList(true)
+    setFilteredUsers(
+      users.filter((user) =>
+        user.username.toLowerCase().includes(e.target.value.toLowerCase())
+      )
+    )
   }
 
   const handleInputFocus = () => {
@@ -66,7 +81,7 @@ const FriendSearch = ({ currentUserUid }) => {
   }
 
   const handleInputBlur = () => {
-    if (!document.activeElement === inputRef.current && !isInsideUserList) {
+    if (document.activeElement !== inputRef.current && !isInsideUserList) {
       setShowUserList(false)
     }
   }
@@ -79,16 +94,16 @@ const FriendSearch = ({ currentUserUid }) => {
     setIsInsideUserList(false)
   }
 
-  const addFriend = async (friendUid, friendData) => {
+  const addFriend = async (friendUid: string, friendData: User) => {
     try {
       const userRef = doc(db, "users", currentUserUid) // Reference to current user's document
       const userDoc = await getDoc(userRef)
 
       if (userDoc.exists()) {
-        const userData = userDoc.data()
+        const userData = userDoc.data() as { friends?: Record<string, User> }
         const updatedFriends = {
           ...userData.friends,
-          [friendUid]: friendData, // Use friendUid as the key for the friend object
+          [friendUid]: friendData,
         }
 
         await updateDoc(userRef, {
@@ -106,7 +121,7 @@ const FriendSearch = ({ currentUserUid }) => {
 
   return (
     <div>
-      <div className="relative">
+      <div className="relative flex">
         <input
           ref={inputRef}
           className="text-black p-2 border-slate-400 border-2 rounded-lg w-96"
@@ -116,20 +131,23 @@ const FriendSearch = ({ currentUserUid }) => {
           onChange={handleSearchChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          autocomplete="off"
+          autoComplete="off"
           id="searchInput"
         />
-        <img
-          src="searchblue.png"
-          alt="search icon"
-          className="absolute z-100 bg-white right-1 top-1/2 transform -translate-y-1/2 w-6 h-6"
-        />
+        <div className="absolute right-2 mt-3">
+          <Image
+            src="/searchblue.png"
+            alt="search icon"
+            width={20}
+            height={12}
+          />
+        </div>
       </div>
 
       {showUserList && (
         <div
           ref={userListRef}
-          className="absolute bg-slate-800 rounded w-56 py-1"
+          className="absolute bg-zinc-800 text-white rounded w-56 py-1"
           onMouseEnter={handleUserListMouseEnter}
           onMouseLeave={handleUserListMouseLeave}
         >
@@ -140,7 +158,7 @@ const FriendSearch = ({ currentUserUid }) => {
             >
               <div>{user.username}</div>
               <button
-                className="bg-slate-300 rounded px-2 py-1"
+                className="bg-black rounded px-2 py-1"
                 onClick={() => addFriend(user.uid, user)} // Pass both UID and data of the friend
               >
                 Add
