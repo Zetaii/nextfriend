@@ -5,76 +5,76 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import Image from "next/image"
 
 const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed)
   }
 
   return (
-    <div className="h-full z-20 text-white hidden lg:block">
+    <div className="fixed h-full z-20 text-white hidden lg:block">
       <div
-        className={`absolute bg-gradient-to-b  border-gray-500 shadow-xl from-zinc-900 to-zinc-600 h-full ${
-          isCollapsed ? "w-16" : "w-[13%]"
+        className={`absolute bg-gradient-to-b border-gray-500 shadow-xl from-zinc-800 to-zinc-800 h-full ${
+          isCollapsed ? "w-48" : "w-[13%]"
         } p-2 transition-width duration-300 shadow-xl`}
       >
         <button
-          className="absolute top-2 right-2 bg-slate-500 text-white p-1 rounded-full focus:outline-none"
+          className="absolute top-1 right-1 bg-slate-500 text-white p-1 rounded-full focus:outline-none"
           onClick={toggleSidebar}
         >
-          {isCollapsed ? <ArrowRight /> : <ArrowLeft />}
+          {isCollapsed ? <ArrowLeft /> : <ArrowRight />}
         </button>
-        {!isCollapsed && (
+        {isCollapsed && (
           <div>
-            <div className="flex items-center">
+            <div className="flex items-center mb-6">
               <Image
                 src="/friendprofile.png"
                 alt="friend"
-                width={6}
-                height={6}
+                width={24}
+                height={24}
               />
-              <div className="w-full text-center mb-6">Friend Profiles:</div>
+              <div className="ml-2">Friend Profiles:</div>
             </div>
-            <div className="mb-6 w-full">
+            <div className="mb-6">
               <FriendProfile />
             </div>
-            <div className="w-full text-center mb-6">Suggested Friends:</div>
+            <div className="mb-6">Suggested Friends:</div>
             <div className="flex flex-col items-center">
-              <div className="flex justify-center items-center w-full mb-6">
+              <div className="flex items-center mb-6">
                 <Image
                   src="/friendprofile.png"
                   alt="friend"
-                  width={6}
-                  height={6}
+                  width={24}
+                  height={24}
                 />
-                <div className="w-full text-center">Friend 1</div>
+                <div className="ml-2">Friend 1</div>
               </div>
-              <div className="flex justify-center items-center w-full mb-6">
+              <div className="flex items-center mb-6">
                 <Image
                   src="/friendprofile.png"
                   alt="friend"
-                  width={6}
-                  height={6}
+                  width={24}
+                  height={24}
                 />
-                <div className="w-full text-center">Friend 2</div>
+                <div className="ml-2">Friend 2</div>
               </div>
-              <div className="flex justify-center items-center w-full mb-6">
+              <div className="flex items-center mb-6">
                 <Image
                   src="/friendprofile.png"
                   alt="friend"
-                  width={6}
-                  height={6}
+                  width={24}
+                  height={24}
                 />
-                <div className="w-full text-center">Friend 3</div>
+                <div className="ml-2">Friend 3</div>
               </div>
-              <div className="flex justify-center items-center w-full mb-6">
+              <div className="flex items-center mb-6">
                 <Image
                   src="/friendprofile.png"
                   alt="friend"
-                  width={6}
-                  height={6}
+                  width={24}
+                  height={24}
                 />
-                <div className="w-full text-center">Friend 4</div>
+                <div className="ml-2">Friend 4</div>
               </div>
             </div>
           </div>

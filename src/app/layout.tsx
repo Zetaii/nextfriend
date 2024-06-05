@@ -26,17 +26,17 @@ export default function RootLayout({
     <>
       <html lang="en">
         <body
-          className={`${poppins.className} bg-slate-800   flex flex-col min-h-screen scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-900
+          className={`${poppins.className} bg-zinc-800 scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-900
            scrollbar-w-3 `}
         >
           <Navbar />
-          <div className="flex flex-1 ">
-            <Sidebar />
-            <div className="flex-1 bg-slate-200">{children}</div>
-          </div>
-          <div className="border-top-2 border-white">
+
+          <main className="flex grainy-light flex-col min-h-[calc(100vh-3.5rem-1px)]">
+            <div className="flex flex-1 ">
+              <div className="flex-1 bg-zinc-900">{children}</div>
+            </div>
             <Footer />
-          </div>
+          </main>
         </body>
       </html>
     </>

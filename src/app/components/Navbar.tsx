@@ -13,11 +13,11 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="sticky z-[100] h-14 inset-x-0 top-0 w-full border-b-2 shadow-2xl border-gray-800/40 bg-blur bg-gradient-to-r from-zinc-950 to-zinc-400 transition-all">
+    <nav className="sticky z-[100] h-14 inset-x-0 top-0 w-full border-b-2 shadow-2xl border-gray-800/40 bg-blur bg-gradient-to-r from-zinc-950 to-zinc-900 transition-all">
       <div className="flex h-14 items-center justify-between border-zinc-200">
         <div className="flex items-center space-x-12 ml-12 mr-12 text-white p-2 ">
           <div className="font-bold text-2xl">
-            <a>FriendMap</a>
+            <a href="/">FriendMap</a>
           </div>
           <div className="flex items-center">
             <div>
