@@ -295,9 +295,9 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
   }, [handleClickOutside])
 
   return (
-    <div>
-      <div className="w-full pr-6 ml-1 text-center relative flex mb-2">
-        <div>
+    <div className="flex flex-col items-center justify-center w-full text-center">
+      <div className="w-full pr-4 ml-1 text-center relative flex mb-2">
+        <div className="justify-center">
           <Image
             src="/bluelocation.png"
             alt="location icon"
@@ -309,7 +309,7 @@ const GoogleAutoComplete: React.FC<GoogleAutoCompleteProps> = ({
           Destination
         </label>
         <input
-          className="text-black text-center w-50% px-2 border-2 border-slate-400 rounded py-1"
+          className="text-black text-center px-2 border-2 border-slate-400 rounded py-1"
           type="text"
           placeholder="Enter destination... "
           ref={destinationInputRef}

@@ -13,6 +13,13 @@ import {
 } from "@react-google-maps/api"
 import MaxWidthWrapper from "../components/MaxWidthWrapper"
 import Image from "next/image"
+import Sidebar from "../components/Sidebar"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface UserData {
   address: string
@@ -65,8 +72,9 @@ export const MapPage: React.FC = (): any => {
 
   const libraries: ("places" | "geometry")[] = ["places"]
   const mapContainerStyle: React.CSSProperties = {
-    width: "22vw",
-    height: "25vh",
+    width: "23vw",
+    height: "28vh",
+    margin: "0 auto",
     borderRadius: "50px",
   }
   const center: google.maps.LatLngLiteral = {
@@ -246,6 +254,7 @@ export const MapPage: React.FC = (): any => {
       }
     )
   }
+
   return (
     <>
       <DirectionsService
@@ -259,81 +268,90 @@ export const MapPage: React.FC = (): any => {
         }}
         callback={handleDirectionsResponse}
       />
-      <div className="h-screen flex flex-col bg-zinc-900 ">
-        <MaxWidthWrapper>
-          <div className="w-[25%]">
-            <Chat />
-          </div>
-          <div className=" justify-center flex mt-6">
-            <h1 className="text-3xl font-extrabold bg-zinc-700 p-2">
+      <Chat />
+      <div className=" flex flex-col bg-zinc-900 ">
+        <Sidebar />
+        <div></div>
+        <MaxWidthWrapper className="pb-24 pt-10 lg:grid  ">
+          <div className=" justify-center flex ">
+            <h1 className="text-3xl font-extrabold mt-7 bg-zinc-700 p-2">
               Find the closest locations!
             </h1>
           </div>
           <div className="flex justify-center ">
-            <div className="w-[100%] mt-14">
+            <div className="w-[100%] mt-14 ">
               <div className="w-full bg-zinc-950 rounded-xl pb-12 px-6 h-[40%] border-2 border-white">
                 <h1 className="text-center mb-10 text-white pt-4   text-xl font-bold">
                   Travel Info
                 </h1>
-
-                <div className="mx-1 w-full text-center flex mb-2 mr-20 justify-center">
-                  <div className="justify-center">
-                    <Image
-                      src="/home.png"
-                      alt="home icon"
-                      width={32}
-                      height={32}
+                <div className="flex flex-col items-center justify-center w-full text-center">
+                  <div className="mx-1 w-full text-center flex mb-2  justify-center ">
+                    <div className="justify-center">
+                      <Image
+                        src="/home.png"
+                        alt="home icon"
+                        width={32}
+                        height={32}
+                      />
+                    </div>
+                    <label
+                      className="pr-6 ml-1 text-center text-white font-bold"
+                      htmlFor="originInput"
+                    >
+                      Origin
+                    </label>
+                    <input
+                      className="text-black text-center px-2 border-2 border-slate-400 rounded py-1"
+                      type="text"
+                      placeholder={
+                        !userData || !userData.address ? "Enter origin..." : ""
+                      }
+                      value={
+                        userData && userData.address ? userData.address : ""
+                      }
+                      readOnly
+                      id="originInput"
                     />
                   </div>
-                  <label
-                    className="pr-6 ml-1 text-center text-white font-bold"
-                    htmlFor="originInput"
-                  >
-                    Origin
-                  </label>
-                  <input
-                    className="text-black text-center w-50% px-2 border-2 border-slate-400 rounded ml-6 py-1"
-                    type="text"
-                    placeholder={
-                      !userData || !userData.address ? "Enter origin..." : ""
-                    }
-                    value={userData && userData.address ? userData.address : ""}
-                    readOnly
-                    id="originInput"
-                  />
-                </div>
-                <div className="justify-center flex ">
-                  <GoogleAutoComplete
-                    destinationInputRef={destinationInputRef}
-                    setDestination={(destination) =>
-                      setDestination(destination)
-                    }
-                    onDestinationSelected={(destination) => {
-                      handleCalculateTravelTime(destination, setTravelTime)
-                    }}
-                    userOrigin={
-                      userData && userData.address ? userData.address : ""
-                    }
-                  />
-                </div>
-                <div className="justify-center flex">
-                  <div className="flex ml-1 text-center">
-                    <Image
-                      src="/clock.png"
-                      alt="clock icon"
-                      width={32}
-                      height={32}
+                  <div className="flex justify-center">
+                    <GoogleAutoComplete
+                      destinationInputRef={destinationInputRef}
+                      setDestination={(destination) =>
+                        setDestination(destination)
+                      }
+                      onDestinationSelected={(destination) => {
+                        handleCalculateTravelTime(destination, setTravelTime)
+                      }}
+                      userOrigin={
+                        userData && userData.address ? userData.address : ""
+                      }
                     />
-                    <p className=" ml-1  text-center font-bold text-white">
-                      Travel Time
-                    </p>
-                    <div className="">
-                      <input></input>
-                      {travelTime && (
-                        <div className="text-black bg-white text-center w-56  border-2 ml-1 border-slate-400 rounded py-1">
-                          {travelTime} minutes
-                        </div>
-                      )}
+                  </div>
+                  <div className="justify-center flex text-center ">
+                    <div className="flex items-center justify-center text-center">
+                      <Image
+                        src="/clock.png"
+                        alt="clock icon"
+                        width={32}
+                        height={32}
+                        className="-ml-8"
+                      />
+                      <p className=" text-center font-bold text-white w-28">
+                        Travel Time
+                      </p>
+                      <div className="">
+                        <input
+                          className="text-center px-2 border-2 border-slate-400 rounded py-1 text-gray-400"
+                          type="text"
+                          value={
+                            travelTime
+                              ? `${travelTime} minutes`
+                              : "Choose a destination..."
+                          }
+                          readOnly
+                          id="originInput"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -363,8 +381,8 @@ export const MapPage: React.FC = (): any => {
                 </div>
               </div>
             </div>
-            <div className="flex-grow">
-              <div className="mt-12 ml-32 ">
+            <div className=" flex-grow  hidden lg:block ">
+              <div className="mt-12 ml-32 flex ">
                 <GoogleMap
                   mapContainerStyle={mapContainerStyle}
                   zoom={9}
@@ -374,6 +392,37 @@ export const MapPage: React.FC = (): any => {
               </div>
             </div>
           </div>
+        </MaxWidthWrapper>
+      </div>
+
+      <div className=" text-white text-2xl border-black mt-24">
+        <MaxWidthWrapper className="pb-24 pt-10 lg:grid  ">
+          <h1 className="text-3xl font-extrabold text-center mt-2 bg-black h-auto w-auto text-white border-b-2 border-black mb-4">
+            FAQ
+          </h1>
+          <Accordion type="single" collapsible className="text-white  ">
+            <AccordionItem value="item-1 ">
+              <AccordionTrigger className="">
+                Are you planning to a best location functionality?
+              </AccordionTrigger>
+              <AccordionContent className="text-lg border-black border-b-2">
+                Yes. It will calculate the best location based on the travel in
+                the future.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>Site styling?</AccordionTrigger>
+              <AccordionContent className="text-lg border-black border-b-2">
+                The site styling is currently minimalistic, but will be updated.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Future functionality?</AccordionTrigger>
+              <AccordionContent className="text-lg border-black border-b-2">
+                Future functionality will include more user-friendly features.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </MaxWidthWrapper>
       </div>
     </>
