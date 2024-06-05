@@ -1,17 +1,24 @@
-import React, { useEffect, useState, FormEvent, ChangeEvent } from "react"
+import React, {
+  useEffect,
+  useState,
+  FormEvent,
+  ChangeEvent,
+  useRef,
+} from "react"
 import { auth, db } from "../firebase/config"
-import "firebase/firestore"
 import {
   addDoc,
   collection,
   doc,
   getDoc,
-  limit,
   onSnapshot,
-  orderBy,
   query,
+  orderBy,
+  limit,
+  startAfter,
   serverTimestamp,
   Timestamp,
+  getDocs,
 } from "firebase/firestore"
 import { useAuthState } from "react-firebase-hooks/auth"
 import { Textarea } from "@/components/ui/textarea"
@@ -49,6 +56,9 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<GroupedMessage[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [lastDoc, setLastDoc] = useState<any>(null)
+  const [loadingMore, setLoadingMore] = useState<boolean>(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const messagesRef = collection(db, "messages")
 
@@ -76,12 +86,21 @@ const Chat: React.FC = () => {
   }, [user])
 
   useEffect(() => {
-    const queryMessages = query(messagesRef, orderBy("createdAt"), limit(25))
+    const queryMessages = query(
+      messagesRef,
+      orderBy("createdAt", "desc"),
+      limit(25)
+    )
+
     const unsubscribe = onSnapshot(queryMessages, (snapshot) => {
-      let messages: Message[] = []
+      const messages: Message[] = []
       snapshot.forEach((doc) => {
         messages.push({ ...(doc.data() as Message), id: doc.id })
       })
+
+      if (snapshot.docs.length > 0) {
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1])
+      }
 
       const groupedMessages: GroupedMessage[] = []
       let currentGroup: GroupedMessage | null = null
@@ -110,6 +129,51 @@ const Chat: React.FC = () => {
 
     return () => unsubscribe()
   }, [messagesRef])
+
+  const loadMoreMessages = async () => {
+    if (loadingMore || !lastDoc) return
+
+    setLoadingMore(true)
+
+    const queryMessages = query(
+      messagesRef,
+      orderBy("createdAt", "desc"),
+      startAfter(lastDoc),
+      limit(25)
+    )
+    const snapshot = await getDocs(queryMessages)
+
+    if (!snapshot.empty) {
+      const newMessages: Message[] = []
+      snapshot.forEach((doc) => {
+        newMessages.push({ ...(doc.data() as Message), id: doc.id })
+      })
+
+      if (snapshot.docs.length > 0) {
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1])
+      }
+
+      const groupedMessages: GroupedMessage[] = [...messages]
+
+      newMessages.forEach((message) => {
+        const lastGroup = groupedMessages[groupedMessages.length - 1]
+
+        if (lastGroup && lastGroup.user === message.user) {
+          lastGroup.messages.push(message)
+        } else {
+          groupedMessages.push({
+            user: message.user,
+            username: message.username,
+            messages: [message],
+          })
+        }
+      })
+
+      setMessages(groupedMessages)
+    }
+
+    setLoadingMore(false)
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -142,14 +206,14 @@ const Chat: React.FC = () => {
 
   return (
     <>
-      <div className="fixed h-full w-auto right-0 border-black/30 border-l-4 hidden lg:block md:block">
+      <div className="fixed h-full w-auto right-0 border-black/30 border-l-4 hidden lg:block md:block ml-12">
         <div className="border-b h-[6%] flex justify-center items-center bg-black w-full text-white">
           Chat Box
         </div>
         <div className="bg-gradient-to-b flex flex-col from-zinc-900 to-zinc-950 h-full p-2">
           <form onSubmit={handleSubmit}>
             <div className="flex-grow overflow-auto mt-4 mb-4">
-              <ScrollArea className=" h-[600px] mb-6">
+              <ScrollArea className="h-[580px]" ref={scrollRef}>
                 {messages.map((group, index) => (
                   <div
                     className="text-white flex border-b-2 pb-6 mb-4"
@@ -180,9 +244,11 @@ const Chat: React.FC = () => {
                   </div>
                 ))}
               </ScrollArea>
+              <Button onClick={loadMoreMessages} disabled={loadingMore}>
+                {loadingMore ? "Loading more..." : "Load More"}
+              </Button>
             </div>
-
-            <div className="grid w-full gap-2">
+            <div className="grid w-full gap-2 ">
               <Textarea
                 className="text-black"
                 value={newMessage}
